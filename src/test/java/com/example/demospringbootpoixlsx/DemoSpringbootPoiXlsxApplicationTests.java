@@ -3,6 +3,7 @@ package com.example.demospringbootpoixlsx;
 import org.apache.poi.common.usermodel.HyperlinkType;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.util.CellAddress;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.RegionUtil;
 import org.apache.poi.xssf.usermodel.*;
@@ -213,7 +214,7 @@ class DemoSpringbootPoiXlsxApplicationTests {
 		// source: https://www.baeldung.com/java-apache-poi-merge-cells
 		XSSFRow forthRowOnBorderSheet = borderSheet.createRow(3);
 		XSSFCell cellB4OnBorderSheet = forthRowOnBorderSheet.createCell(1);
-		XSSFCell cellB5OnBorderSheet = forthRowOnBorderSheet.createCell(2);
+		XSSFCell cellC4OnBorderSheet = forthRowOnBorderSheet.createCell(2);
 		//cellB4OnBorderSheet.setCellValue("Cell merged !!");
 		int firstRow = 3;
 		int lastRow = 3;
@@ -287,7 +288,8 @@ class DemoSpringbootPoiXlsxApplicationTests {
 		formulaCell = formulaRow.createCell(3);
 		formulaCell.setCellValue("SQRT(C5)");
 
-		workbook.getCreationHelper().createFormulaEvaluator().evaluateAll();
+		FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
+		evaluator.evaluateAll();
 
 		// Create a new sheet to test hyperlink
 		XSSFSheet hyperlinkSheet = workbook.createSheet("Hyperlink");
@@ -297,6 +299,40 @@ class DemoSpringbootPoiXlsxApplicationTests {
 		XSSFHyperlink link = workbook.getCreationHelper().createHyperlink(HyperlinkType.URL);
 		link.setAddress("http://www.google.com");
 		hyperlinkCell.setHyperlink(link);
+
+		// Retrieve cell value from another sheet
+		CellAddress cellAddress = new CellAddress("C4");
+		Row rowFormulaC4 = formulaSheet.getRow(cellAddress.getRow());
+		Cell cellFormulaC4 = rowFormulaC4.getCell(cellAddress.getColumn());
+		XSSFRow hyperlinkRow2 = hyperlinkSheet.createRow(1);
+		XSSFCell hyperlinkCell2Label = hyperlinkRow2.createCell(0);
+		hyperlinkCell2Label.setCellValue("Sum");
+		XSSFCell hyperlinkCell2 = hyperlinkRow2.createCell(1);
+		if (cellFormulaC4.getCellType() == CellType.FORMULA) {
+			switch (evaluator.evaluateFormulaCell(cellFormulaC4)) {
+				case BOOLEAN:
+					hyperlinkCell2.setCellValue(cellFormulaC4.getBooleanCellValue());
+					break;
+				case NUMERIC:
+					hyperlinkCell2.setCellValue(cellFormulaC4.getNumericCellValue());
+					break;
+				case STRING:
+					hyperlinkCell2.setCellValue(cellFormulaC4.getStringCellValue());
+					break;
+			}
+		} else {
+			switch (cellFormulaC4.getCellType()) {
+				case BOOLEAN:
+					hyperlinkCell2.setCellValue(cellFormulaC4.getBooleanCellValue());
+					break;
+				case NUMERIC:
+					hyperlinkCell2.setCellValue(cellFormulaC4.getNumericCellValue());
+					break;
+				case STRING:
+					hyperlinkCell2.setCellValue(cellFormulaC4.getStringCellValue());
+					break;
+			}
+		}
 
 		// Create a new sheet to test later modification
 		XSSFSheet modificationSheet = workbook.createSheet("Modification");
